@@ -73,7 +73,10 @@ def process_payment_data(file_path, file_format='csv'):
         if file_format.lower() == 'xlsx':
             data = pd.read_excel(file_path)
         else:
-            data = pd.read_csv(file_path)
+            with open(file_path, 'r', encoding='utf-8') as f:
+                first_line = f.readline()
+                separator = detect_separator(first_line)
+            data = pd.read_csv(file_path, sep=separator)
         
         if data.empty or len(data) < 1:
             raise ValueError("File is empty or invalid")
@@ -179,7 +182,10 @@ def process_ib_rebate(file_path, file_format='csv'):
         if file_format.lower() == 'xlsx':
             data = pd.read_excel(file_path)
         else:
-            data = pd.read_csv(file_path)
+            with open(file_path, 'r', encoding='utf-8') as f:
+                first_line = f.readline()
+                separator = detect_separator(first_line)
+            data = pd.read_csv(file_path, sep=separator)
         
         if data.empty:
             raise ValueError("File is empty or invalid")
@@ -336,7 +342,10 @@ def process_crm_deposit(file_path, file_format='csv'):
         if file_format.lower() == 'xlsx':
             data = pd.read_excel(file_path)
         else:
-            data = pd.read_csv(file_path)
+            with open(file_path, 'r', encoding='utf-8') as f:
+                first_line = f.readline()
+                separator = detect_separator(first_line)
+            data = pd.read_csv(file_path, sep=separator)
         
         if data.empty:
             raise ValueError("File is empty or invalid")
@@ -432,7 +441,10 @@ def process_account_list(file_path, file_format='csv'):
         if file_format.lower() == 'xlsx':
             data = pd.read_excel(file_path)
         else:
-            data = pd.read_csv(file_path, sep=';')
+            with open(file_path, 'r', encoding='utf-8') as f:
+                first_line = f.readline()
+                separator = detect_separator(first_line)
+            data = pd.read_csv(file_path, sep=separator)
         
         if data.empty:
             raise ValueError("File is empty or invalid")
