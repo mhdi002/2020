@@ -40,7 +40,8 @@ def dashboard():
             'timestamp': file_record.upload_timestamp
         }
     
-    return render_template('dashboard.html', title='Dashboard', file_status=file_status)
+    form = DateRangeForm()
+    return render_template('dashboard.html', title='Dashboard', file_status=file_status, form=form)
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -254,7 +255,7 @@ def generate_report():
         return redirect(url_for('main.dashboard'))
 
 # Stage 2: New Report Generation Routes
-@bp.route('/report/stage2', methods=['GET', 'POST'])
+@bp.route('/report/stage2', methods=['POST'])
 @login_required
 def generate_stage2_report():
     form = DateRangeForm()
@@ -263,82 +264,27 @@ def generate_stage2_report():
         try:
             start_date = form.start_date.data
             end_date = form.end_date.data
-            report_type = form.report_type.data
             
-            if report_type == 'original':
-                return redirect(url_for('main.generate_report'))
+            # Generate Stage 2 financial report
+            report = generate_final_report(start_date, end_date)
+            chart_data = get_summary_data_for_charts(start_date, end_date)
             
-            elif report_type == 'stage2':
-                # Generate Stage 2 financial report
-                report = generate_final_report(start_date, end_date)
-                chart_data = get_summary_data_for_charts(start_date, end_date)
-                
-                # Generate Stage 2 specific charts
-                stage2_charts = create_stage2_charts(chart_data)
-                
-                return render_template('stage2_results_enhanced.html',
-                                     title='Financial Summary Report',
-                                     report=report,
-                                     chart_data=chart_data,
-                                     charts=stage2_charts,
-                                     start_date=start_date,
-                                     end_date=end_date)
+            # Generate Stage 2 specific charts
+            stage2_charts = create_stage2_charts(chart_data)
             
-            elif report_type == 'discrepancies':
-                # Generate discrepancies analysis
-                discrepancies = compare_crm_and_client_deposits(start_date, end_date)
-                
-                return render_template('discrepancies.html',
-                                     title='Deposit Discrepancies Analysis',
-                                     discrepancies=discrepancies,
-                                     start_date=start_date,
-                                     end_date=end_date)
-            
-            elif report_type == 'combined':
-                # Generate combined report (both original and stage2)
-                # Check if original files exist
-                original_files = ['deals', 'excluded', 'vip']
-                has_original = all(UploadedFiles.query.filter_by(
-                    user_id=current_user.id, file_type=ft).first() for ft in original_files)
-                
-                combined_results = {}
-                
-                if has_original:
-                    # Generate original report
-                    deals_file = UploadedFiles.query.filter_by(user_id=current_user.id, file_type='deals').first()
-                    excluded_file = UploadedFiles.query.filter_by(user_id=current_user.id, file_type='excluded').first()
-                    vip_file = UploadedFiles.query.filter_by(user_id=current_user.id, file_type='vip').first()
-                    
-                    deals_ext = deals_file.filename.rsplit('.', 1)[1].lower()
-                    deals_df = pd.read_excel(deals_file.file_path) if deals_ext == 'xlsx' else pd.read_csv(deals_file.file_path)
-                    
-                    excluded_ext = excluded_file.filename.rsplit('.', 1)[1].lower()
-                    excluded_df = pd.read_excel(excluded_file.file_path, header=None) if excluded_ext == 'xlsx' else pd.read_csv(excluded_file.file_path, header=None)
-                    
-                    vip_ext = vip_file.filename.rsplit('.', 1)[1].lower()
-                    vip_df = pd.read_excel(vip_file.file_path, header=None) if vip_ext == 'xlsx' else pd.read_csv(vip_file.file_path, header=None)
-                    
-                    original_results = run_report_processing(deals_df, excluded_df, vip_df, 
-                                                           start_date.strftime('%d.%m.%Y %H:%M:%S') if start_date else None,
-                                                           end_date.strftime('%d.%m.%Y %H:%M:%S') if end_date else None)
-                    combined_results['original'] = original_results
-                
-                # Generate Stage 2 report
-                stage2_report = generate_final_report(start_date, end_date)
-                combined_results['stage2'] = stage2_report
-                
-                return render_template('combined_results.html',
-                                     title='Combined Financial Report',
-                                     results=combined_results,
-                                     start_date=start_date,
-                                     end_date=end_date,
-                                     has_original=has_original)
-        
+            return render_template('stage2_results_enhanced.html',
+                                    title='Financial Summary Report',
+                                    report=report,
+                                    chart_data=chart_data,
+                                    charts=stage2_charts,
+                                    start_date=start_date,
+                                    end_date=end_date)
+
         except Exception as e:
             flash(f'Error generating report: {str(e)}', 'danger')
-            return redirect(url_for('main.generate_stage2_report'))
     
-    return render_template('report_selection.html', title='Generate Reports', form=form)
+    # If form fails validation or an exception occurs, redirect to dashboard
+    return redirect(url_for('main.dashboard'))
 
 @bp.route('/api/upload_status')
 @login_required

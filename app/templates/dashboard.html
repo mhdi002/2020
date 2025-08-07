@@ -38,17 +38,26 @@
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
+        <div class="col-md-6 mb-3">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center">
-                    <div class="text-success mb-2">
-                        <i class="fas fa-chart-line fa-2x"></i>
-                    </div>
-                    <h5 class="card-title">Generate Reports</h5>
-                    <p class="card-text text-muted">Create comprehensive financial reports</p>
-                    <a href="{{ url_for('main.generate_stage2_report') }}" class="btn btn-success btn-sm">
-                        <i class="fas fa-chart-bar me-1"></i>Reports
-                    </a>
+                <div class="card-body">
+                    <h5 class="card-title text-center"><i class="fas fa-chart-line me-2"></i>Generate Stage 2 Report</h5>
+                    <form method="POST" action="{{ url_for('main.generate_stage2_report') }}" class="mt-3">
+                        {{ form.hidden_tag() }}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.start_date.label(class="form-label") }}
+                                {{ form.start_date(class="form-control", type="datetime-local") }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.end_date.label(class="form-label") }}
+                                {{ form.end_date(class="form-control", type="datetime-local") }}
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-success", value="Generate Stage 2 Report") }}
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -192,11 +201,6 @@
                                 <i class="fas fa-upload me-1"></i>Upload More Files
                             </a>
                             
-                            {% if file_status %}
-                                <a href="{{ url_for('main.generate_stage2_report') }}" class="btn btn-success">
-                                    <i class="fas fa-chart-bar me-1"></i>Generate Financial Reports
-                                </a>
-                            {% endif %}
                             
                             {% if file_status.get('deals') and file_status.get('excluded') and file_status.get('vip') %}
                                 <a href="{{ url_for('main.generate_report') }}" class="btn btn-info">

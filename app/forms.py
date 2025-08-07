@@ -83,15 +83,6 @@ class DateRangeForm(FlaskForm):
                             format='%Y-%m-%d %H:%M:%S',
                             render_kw={"placeholder": "YYYY-MM-DD HH:MM:SS (optional)"})
     
-    report_type = SelectField('Report Type',
-                             choices=[
-                                 ('original', 'Original Deal Processing Report'),
-                                 ('stage2', 'Stage 2 Financial Report'),
-                                 ('combined', 'Combined Report'),
-                                 ('discrepancies', 'Deposit Discrepancies Analysis')
-                             ],
-                             validators=[DataRequired()])
-    
     submit = SubmitField('Generate Report')
 
     def validate(self, **kwargs):
