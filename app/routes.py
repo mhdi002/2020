@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session, jsonify, send_from_directory
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 
@@ -271,9 +271,40 @@ def generate_stage2_report():
             elif report_type == 'stage2':
                 # Generate Stage 2 financial report
                 report = generate_final_report(start_date, end_date)
-                chart_data = get_summary_data_for_charts(start_date, end_date)
                 
-                # Generate Stage 2 specific charts
+                excel_download_url = None
+                if report.get('formatted_table'):
+                    # Data is insufficient for charts, generate an Excel file instead
+                    try:
+                        # Prepare DataFrame
+                        report_df = pd.DataFrame(report['report_data'], columns=['Category', 'Value'])
+
+                        # Clean data - remove non-data rows
+                        report_df = report_df[~report_df['Category'].isin(['Date Range', ''])]
+                        report_df = report_df.dropna()
+
+                        # Create a unique filename for the Excel file
+                        timestamp = int(pd.Timestamp.now().timestamp())
+                        excel_filename = f"financial_summary_{current_user.id}_{timestamp}.xlsx"
+
+                        # Ensure the upload folder exists
+                        upload_folder = current_app.config.get('UPLOAD_FOLDER', os.path.join(current_app.instance_path, 'uploads'))
+                        if not os.path.exists(upload_folder):
+                            os.makedirs(upload_folder)
+
+                        excel_filepath = os.path.join(upload_folder, excel_filename)
+
+                        # Save the DataFrame to an Excel file
+                        report_df.to_excel(excel_filepath, index=False)
+
+                        # Generate the download URL
+                        excel_download_url = url_for('main.download_file', filename=excel_filename)
+
+                    except Exception as e:
+                        flash(f'An error occurred while generating the Excel report: {str(e)}', 'warning')
+
+                # Chart generation remains for cases with sufficient data
+                chart_data = get_summary_data_for_charts(start_date, end_date)
                 stage2_charts = create_stage2_charts(chart_data)
                 
                 return render_template('stage2_results_enhanced.html',
@@ -282,7 +313,8 @@ def generate_stage2_report():
                                      chart_data=chart_data,
                                      charts=stage2_charts,
                                      start_date=start_date,
-                                     end_date=end_date)
+                                     end_date=end_date,
+                                     excel_download_url=excel_download_url)
             
             elif report_type == 'discrepancies':
                 # Generate discrepancies analysis
@@ -366,3 +398,10 @@ def admin():
 
     logs = Log.query.order_by(Log.timestamp.desc()).all()
     return render_template('admin.html', title='Admin Panel', logs=logs)
+
+@bp.route('/download/<path:filename>')
+@login_required
+def download_file(filename):
+    """Route to download files from the instance/uploads directory."""
+    upload_dir = os.path.join(current_app.instance_path, 'uploads')
+    return send_from_directory(upload_dir, filename, as_attachment=True)

@@ -28,112 +28,30 @@
     </div>
 
     {% if report.formatted_table %}
-        <!-- TABLE MODE: Insufficient data for charts - show formatted table -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="alert alert-info border-0 shadow-sm">
-                    <div class="d-flex">
-                        <i class="fas fa-info-circle me-3 mt-1"></i>
-                        <div>
-                            <h6 class="mb-2">Limited Data View</h6>
-                            <p class="mb-0">Due to insufficient data for meaningful chart visualization, displaying summary table instead. 
-                            Upload more data files to enable advanced chart analysis.</p>
-                        </div>
+        <!-- TABLE MODE: Insufficient data for charts - show Excel download -->
+        <div class="row mb-4 justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-lg border-0 text-center p-5 animate__animated animate__fadeInUp">
+                    <div class="card-body">
+                        <i class="fas fa-file-excel fa-4x text-success mb-4"></i>
+                        <h2 class="card-title">Excel Report Ready</h2>
+                        <p class="card-text text-muted">
+                            The dataset for this period is small, so we've generated a downloadable Excel report instead of charts.
+                        </p>
+                        {% if excel_download_url %}
+                            <a href="{{ excel_download_url }}" class="btn btn-success btn-lg mt-3 shadow">
+                                <i class="fas fa-download me-2"></i>Download Excel Report
+                            </a>
+                        {% else %}
+                            <div class="alert alert-warning mt-4">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Could not generate the Excel file. Please try again or contact support.
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Formatted Summary Table (Google Apps Script style) -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow-lg border-0">
-                    <div class="card-header bg-gradient-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-calculator me-2"></i>Financial Summary Report
-                            {% if report.date_range %}
-                                <small class="opacity-75 ms-2">({{ report.date_range }})</small>
-                            {% endif %}
-                        </h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0" id="summary-table">
-                                <tbody>
-                                    {% for row in report.report_data %}
-                                        {% if row[0] and row[1] %}
-                                            {% if row[0] == 'Date Range' %}
-                                                <tr class="table-primary">
-                                                    <td class="fw-bold py-3">
-                                                        <i class="fas fa-calendar-alt me-2"></i>{{ row[0] }}
-                                                    </td>
-                                                    <td class="text-end py-3 fw-bold">{{ row[1] }}</td>
-                                                </tr>
-                                            {% elif row[0] == '' %}
-                                                <!-- Skip empty rows -->
-                                            {% else %}
-                                                <tr class="financial-row">
-                                                    <td class="py-3">
-                                                        {% if 'Deposit' in row[0] and 'Fee' not in row[0] %}
-                                                            <i class="fas fa-arrow-down text-success me-2"></i>
-                                                            <span class="badge bg-success-soft text-success me-2">INFLOW</span>
-                                                        {% elif 'Withdraw' in row[0] or 'Withdrawal' in row[0] %}
-                                                            <i class="fas fa-arrow-up text-danger me-2"></i>
-                                                            <span class="badge bg-danger-soft text-danger me-2">OUTFLOW</span>
-                                                        {% elif 'Fee' in row[0] %}
-                                                            <i class="fas fa-coins text-warning me-2"></i>
-                                                            <span class="badge bg-warning-soft text-warning me-2">FEE</span>
-                                                        {% elif 'Rebate' in row[0] %}
-                                                            <i class="fas fa-gift text-info me-2"></i>
-                                                            <span class="badge bg-info-soft text-info me-2">REBATE</span>
-                                                        {% else %}
-                                                            <i class="fas fa-chart-line text-secondary me-2"></i>
-                                                            <span class="badge bg-secondary-soft text-secondary me-2">OTHER</span>
-                                                        {% endif %}
-                                                        <span class="fw-semibold">{{ row[0] }}</span>
-                                                    </td>
-                                                    <td class="text-end py-3">
-                                                        <span class="h5 mb-0 
-                                                            {% if 'Deposit' in row[0] and 'Fee' not in row[0] %}text-success
-                                                            {% elif 'Withdraw' in row[0] or 'Withdrawal' in row[0] %}text-danger
-                                                            {% elif 'Fee' in row[0] %}text-warning
-                                                            {% elif 'Rebate' in row[0] %}text-info
-                                                            {% else %}text-dark{% endif %}">
-                                                            ${{ row[1] }}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            {% endif %}
-                                        {% endif %}
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-light">
-                        <div class="row text-center">
-                            <div class="col-md-3 mb-2">
-                                <small class="text-muted">Total Entries</small><br>
-                                <strong class="text-dark">{{ report.report_data|length - 2 }}</strong>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <small class="text-muted">Report Type</small><br>
-                                <strong class="text-primary">Summary Table</strong>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <small class="text-muted">Generated</small><br>
-                                <strong class="text-info">{{ moment().format('DD/MM/YYYY HH:mm') if moment else 'Now' }}</strong>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <small class="text-muted">Status</small><br>
-                                <span class="badge bg-success">Complete</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     {% else %}
         <!-- CHART MODE: Sufficient data - show charts and detailed analysis -->
         
