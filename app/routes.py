@@ -20,6 +20,18 @@ from app.stage2_reports_enhanced import generate_final_report, compare_crm_and_c
 
 bp = Blueprint('main', __name__)
 
+def detect_separator(line):
+    """Detect CSV separator based on character count"""
+    tab_count = line.count('\t')
+    comma_count = line.count(',')
+    semicolon_count = line.count(';')
+
+    if tab_count >= comma_count and tab_count >= semicolon_count:
+        return '\t'
+    elif semicolon_count >= comma_count:
+        return ';'
+    return ','
+
 @bp.route('/')
 @bp.route('/index')
 def index():
@@ -216,19 +228,25 @@ def generate_report():
         if deals_ext == 'xlsx':
             deals_df = pd.read_excel(deals_file.file_path)
         else:
-            deals_df = pd.read_csv(deals_file.file_path)
+            with open(deals_file.file_path, 'r', encoding='utf-8') as f:
+                separator = detect_separator(f.readline())
+            deals_df = pd.read_csv(deals_file.file_path, sep=separator)
         
         excluded_ext = excluded_file.filename.rsplit('.', 1)[1].lower()
         if excluded_ext == 'xlsx':
             excluded_df = pd.read_excel(excluded_file.file_path, header=None)
         else:
-            excluded_df = pd.read_csv(excluded_file.file_path, header=None)
+            with open(excluded_file.file_path, 'r', encoding='utf-8') as f:
+                separator = detect_separator(f.readline())
+            excluded_df = pd.read_csv(excluded_file.file_path, sep=separator, header=None)
         
         vip_ext = vip_file.filename.rsplit('.', 1)[1].lower()
         if vip_ext == 'xlsx':
             vip_df = pd.read_excel(vip_file.file_path, header=None)
         else:
-            vip_df = pd.read_csv(vip_file.file_path, header=None)
+            with open(vip_file.file_path, 'r', encoding='utf-8') as f:
+                separator = detect_separator(f.readline())
+            vip_df = pd.read_csv(vip_file.file_path, sep=separator, header=None)
 
         results = run_report_processing(deals_df, excluded_df, vip_df)
 
